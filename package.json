@@ -1,0 +1,27 @@
+{
+  "name": "react-native-taginput",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kyo504/react-native-taginput.git"
+  },
+  "keywords": [
+    "react-native-component",
+    "react-native",
+    "taginput",
+    "tag",
+    "ios",
+    "android"
+  ],
+  "author": "Hunkyo Jung <hunkyo.jung@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kyo504/react-native-taginput/issues"
+  },
+  "homepage": "https://github.com/kyo504/react-native-taginput#readme"
+}
