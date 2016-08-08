@@ -12,16 +12,34 @@ import {
 
 import Tag from './Tag';
 
-class TagInput extends Component {
+export default class TagInput extends Component {
 
   static propTypes = {
     initialTags: React.PropTypes.arrayOf(React.PropTypes.string),
-    tagList: React.PropTypes.arrayOf(React.PropTypes.string),
+    suggestions: React.PropTypes.arrayOf(React.PropTypes.string),
+    placeholder: React.PropTypes.string,
+    footerText: React.PropTypes.string,
+    height: React.PropTypes.number,
+    fontSize: React.PropTypes.number,
+    containerStyle: View.propTypes.style,
+    inputContainerStyle: View.propTypes.style,
+    textInputStyle: TextInput.propTypes.style,
+    listStyle: ListView.propTypes.style,
+    onUpdateTags: React.PropTypes.func,
+    onUpdateLayout: React.PropTypes.func,
   }
 
   static defaultProps = {
     initialTags: [],
-    tagList: [],
+    suggestions: [],
+    placeholder: 'Select tag or enter tag name...',
+    footerText: 'Add a new tag',
+    onUpdateTags: () => {},
+    onUpdateLayout: () => {},
+    containerStyle: null,
+    inputContainerStyle: null,
+    textInputStyle: null,
+    listStyle: null,
   }
 
   constructor(props) {
@@ -30,58 +48,89 @@ class TagInput extends Component {
     var ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
 
     this.state = {
-      dataSource: ds.cloneWithRows(props.tagList),
+      dataSource: ds.cloneWithRows(this._filterList(props.initialTags)),
       showlist: false,
       tags: props.initialTags,
+      userInput: '',
+      listPosition: {
+        top: 0,
+        left: 0,
+        right: 0,
+      }
     }
   }
 
-  triggerBlur() {
-    if (this.refs.textInput) this.refs.textInput.blur();
+  getTags() {
+    return this.state.tags;
   }
 
-  _getFilterList(newArray) {
+  blur() {
+    this.refs.textInput.blur();
+  }
 
-    var filteredList = this.props.tagList.filter((tag) => {
-      var temp = newArray.find((t) => {
-        return t === tag;
-      });
-      return tag !== temp;
-    })
+  focus() {
+    this.refs.textInput.focus();
+  }
 
+  clearText() {
+    this.setState({userInput: ''});
+    this.refs.textInput.setNativeProps({text: ''});
+  }
+
+  _filterList(newTags) {
+    var filteredList = this.props.suggestions.filter((tag) => {
+      return tag !== newTags.find((t) => (t === tag))
+    });
     return filteredList;
   }
 
   _addTag(text) {
-    var newArray = this.state.tags.concat([text]);
-    var filteredList = this._getFilterList(newArray);
+    var newTags = this.state.tags.concat([text]);
+    var filteredList = this._filterList(newTags);
     this.setState({
-      tags: newArray,
+      tags: newTags,
       dataSource: this.state.dataSource.cloneWithRows(filteredList)
     });
+
+    this.clearText();
+
+    this.props.onChange(newTags);
   }
 
   _renderRow(rowData, sectionID, rowID) {
     return (
       <TouchableHighlight onPress={this._addTag.bind(this, rowData)}>
-        <View style={styles.tagContainer}>
+        <View style={styles.rowContainer}>
           <Text style={styles.text}>{rowData}</Text>
         </View>
       </TouchableHighlight>
     )
   }
 
+  _renderFooter() {
+    const { userInput, tags } = this.state;
+    const shouldRender = ( userInput && !tags.includes(userInput) ) ? true : false;
+    if (shouldRender) {
+      return (
+        <TouchableHighlight onPress={this._addTag.bind(this, userInput)}>
+          <View style={styles.tagContainer}>
+            <Text style={styles.text}>{this.props.footerText + ' \"' + userInput + '\"'}</Text>
+          </View>
+        </TouchableHighlight>
+      )
+    }
+
+    return null;
+  }
+
   _renderSeparator(sectionID, rowID, adjacentRowHighlighted) {
     return (
-      <View
-        key={`${sectionID}-${rowID}`}
-        style={{height:1, alignSelf: 'stretch', backgroundColor: '#666666'}}
-      />
+      <View key={rowID} style={styles.separator}/>
     )
   }
 
   _onBlur() {
-    this.triggerBlur();
+    this.blur();
     this.setState({showList: false});
   }
 
@@ -89,65 +138,85 @@ class TagInput extends Component {
     this.setState({showList: true});
   }
 
-  _onChange(event) {
-    console.log('onChange');
-  }
-
   _onChangeText(text) {
-    var filteredList = this.props.tagList.filter((tag) => {
-      return tag.includes(text);
+    var filteredList = this.props.suggestions.filter((tag) => {
+      return !this.state.tags.find(t => (t === tag)) && tag.includes(text);
     })
 
-    this.setState({dataSource: this.state.dataSource.cloneWithRows(filteredList)});
+    this.setState({
+      dataSource: this.state.dataSource.cloneWithRows(filteredList),
+      userInput: text,
+    });
   }
 
   _getListView() {
-    if(this.state.showList === true) {
-      return (
-        <ListView
-          style={styles.taglist}
-          ref={(component) => this._listView = component}
-          keyboardShouldPersistTaps={true}
-          keyboardDismissMode="on-drag"
-          dataSource={this.state.dataSource}
-          enableEmptySections={true}
-          renderRow={this._renderRow.bind(this)}
-          renderSeparator={this._renderSeparator.bind(this)}
-        />        
-      )
+    const { dataSource, listPosition } = this.state;
+    const { listStyle } = this.props; 
+
+    if(!this.state.showList) {
+      return null;
     }
 
-    return null;
+    return (
+      <ListView
+        style={[styles.list, listPosition, listStyle]}
+        ref='listView'
+        keyboardShouldPersistTaps={true}
+        dataSource={dataSource}
+        enableEmptySections={true}
+        renderRow={this._renderRow.bind(this)}
+        renderSeparator={this._renderSeparator.bind(this)}
+        renderFooter={this._renderFooter.bind(this)}
+      />        
+    )
   }
 
   _removeTag(tag) {
-    console.log(tag);
-
     var newTags = this.state.tags.filter((t) => (t !== tag));
-    var filteredList = this._getFilterList(newTags);
+    var filteredList = this._filterList(newTags);
     this.setState({
       tags: newTags,
       dataSource: this.state.dataSource.cloneWithRows(filteredList),
+    });
+
+    this.props.onChange(newTags);    
+  }
+
+  _onChangeLayout(e) {
+    let layout = e.nativeEvent.layout;
+
+    this.setState({
+      listPosition: {
+        top: layout.height,
+        left: 0,
+        right: 0,
+      }
     })
+
+    this.props.onUpdateLayout(layout);
   }
 
   render() {
+
+    const { placeholder, containerStyle, inputContainerStyle, textInputStyle } = this.props;
+
     return (
-      <View>
-        <View style={styles.container}>
-          <View style={styles.taginputBox}>
-            {this.state.tags.map((tag) => (
-              <Tag key={tag} text={tag} onPress={this._removeTag.bind(this, tag)}/>
-            ))}
-            <TextInput
-              style={styles.textinput}
-              underlineColorAndroid='transparent'
-              placeholder='검색'
-              onChange={this._onChange.bind(this)}
-              onChangeText={this._onChangeText.bind(this)}
-              onFocus={this._onFocus.bind(this)}
-            />
-          </View>
+      <View style={[styles.container, containerStyle]}>
+        <View ref='tagInput' style={[styles.inputContainer, inputContainerStyle]} onLayout={this._onChangeLayout.bind(this)}>
+          {this.state.tags.map((tag) => (
+            <Tag key={tag} text={tag} style={null} onPress={this._removeTag.bind(this, tag)}/>
+          ))}
+          <TextInput
+            ref='textInput'
+            style={[styles.textinput, textInputStyle]}
+            underlineColorAndroid='transparent'
+            placeholder={this.state.tags.length > 0 ? '' : this.props.placeholder}
+            onChangeText={this._onChangeText.bind(this)}
+            onFocus={this._onFocus.bind(this)}
+            onBlur={this._onBlur.bind(this)}
+            autoCorrect={false}
+            autoCapitalize='none'
+          />
         </View>
         {this._getListView()}
       </View>
@@ -157,38 +226,39 @@ class TagInput extends Component {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#F5FCFF',
-    borderWidth:1,
-    borderColor: 'gray',
+    flex: 1,
   },
-  taginputBox: {
+  inputContainer: {
     flexDirection:'row', 
     flexWrap: 'wrap',
-    margin: 5,
-    padding: 5,
+    padding: 2,
     borderColor: 'gray',
     borderWidth: 1,
     borderRadius: 5,
+    minHeight:20,
   },
   textinput: {
-    flex:1,
+    flex: 1,
+    fontSize:10,
     alignSelf: 'stretch',
-    fontSize: 16,
     minWidth: 50,
+    height:20,
+    margin:2
   },
-  taglist: {
-    height:300,
-  },
-  tagContainer: {
-    backgroundColor: '#242424',
+  rowContainer: {
+    backgroundColor: 'white',
     justifyContent:'center',
-    paddingHorizontal: 16,
-    height: 40,
+    padding:10,
   },
   text: {
-    fontSize: 16,
-    color: 'white',
+    fontSize: 10,
   },
+  separator: {
+    height:1,
+    alignSelf: 'stretch',
+    backgroundColor: '#666666',
+  },
+  list: {
+    position: 'absolute',
+  }
 });
-
-module.exports = TagInput;
