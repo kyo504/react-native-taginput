@@ -1,68 +1,48 @@
-
-
-import React, { Component } from 'react';
+import React, { PropTypes } from 'react';
 import {
   StyleSheet,
   View,
   Text,
-  TouchableWithoutFeedback
+  TouchableHighlight,
 } from 'react-native';
 
-class Tag extends Component {
+const Tag = ({
+  text,
+  tagContainer,
+  onPress,
+}) => {
+  const styles = StyleSheet.create({
+    container: {
+      justifyContent: 'center',
+      backgroundColor: 'gray',    
+      paddingHorizontal: 5,
+      margin: 2,
+      borderRadius: 3,
+      height:20,
+    },
+    text: {
+      fontSize: 10,
+      color: '#ffffff'
+    },
+  })
 
-  static propTypes = {
-    text: React.PropTypes.string.isRequired,
-    onPress: React.PropTypes.func,
-  }
-
-  static defaultProps = {
-    text: 'none',
-    onPress: () => {},
-  }
-
-  render() {    
-    return (
-      <View style={[styles.container, ]}>
-        <Text style={styles.text}>{this.props.text}</Text>
-        <TouchableWithoutFeedback onPress={() => this.props.onPress()}>
-          <View style={styles.delete}>
-            <Text style={styles.deleteText}>X</Text>
-          </View>
-        </TouchableWithoutFeedback>
-      </View>
-    )
-  }
+  return (
+    <TouchableHighlight style={[styles.container, tagContainer]} onPress={onPress}>
+      <Text style={styles.text}>{text}</Text>
+    </TouchableHighlight>
+  );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    backgroundColor: 'gray',    
-    paddingHorizontal: 5,
-    margin: 5,
-    borderRadius: 5,
-    alignItems: 'center',
-    height:30,
-  },
-  text: {
-    fontSize: 16,
-    color: '#ffffff'
-  },
-  delete: {
-    justifyContent:'center',
-    alignItems: 'center',
-    width: 14,
-    height: 14,
-    borderColor: 'white',
-    borderWidth: 0.5,
-    borderRadius: 7,
-    right:0,
-    marginLeft:5,
-  },
-  deleteText: {
-    fontSize: 12,
-    color: '#ffffff'
-  }
-});
+Tag.propTypes = {
+  text: PropTypes.string,
+  tagContainer: View.propTypes.style,
+  onPress: PropTypes.func,
+}
+
+Tag.defaultProps = {
+  text: 'none',
+  tagContainer: null,
+  onPress: () => {},
+}
 
 export default Tag;
