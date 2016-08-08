@@ -41,7 +41,17 @@ class App extends Component {
 
 ## Props
 
-> Add props
+| Prop | Type | Description |
+:------------ |:---------------:| :-----|
+| initialTags | array | |
+| suggestions | array | |
+| containerStyle | style |  |
+| inputContainerStyle | style |  |
+| listStyle | style |  |
+| placeholder | string |  |
+| onUpdateTags | function | |
+| onUpdateLayout | function | |
+
 
 ## Contribution
 **Issues** and **Pull requests** are welcome. Please add a screenshot of bug and code snippet.
